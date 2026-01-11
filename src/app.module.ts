@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ConfigModule } from '@nestjs/config'; // <--- 1. IMPORTANTE: Importar esto
+
 import { UsersModule } from './modules/users/users.module';
 import { RecyclingModule } from './modules/recycling/recycling.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -9,7 +11,14 @@ import { MaterialModule } from './modules/material/material.module';
 
 @Module({
   imports: [
+    // 2. IMPORTANTE: Esto carga el archivo .env antes que todo lo demás
+    ConfigModule.forRoot({
+      isGlobal: true, // Esto hace que funcione en todos tus módulos (Auth, Users, etc.) sin reimportarlo
+    }),
+
+    // Ahora sí leerá process.env.MONGO_URI correctamente del archivo .env
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/NosPlanetInfo'),
+
     UsersModule,
     RecyclingModule,
     AuthModule,

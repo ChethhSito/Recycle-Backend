@@ -6,7 +6,7 @@ export class LoginDto {
     email: string;
 
     @ApiProperty({ example: 'hashedpassword', description: 'Password' })
-    passwordHash: string;
+    password: string;
 }
 
 export class RegisterDto extends CreateUserDto { }

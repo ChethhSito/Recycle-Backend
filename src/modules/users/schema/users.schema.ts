@@ -1,66 +1,72 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { HydratedDocument } from 'mongoose';
 import { UserRole } from '../enum/userRole.enum';
 
-@Schema({ timestamps: true })
-export class User extends Document {
-    // --- Identificación ---
-    @Prop({ required: true, unique: true })
-    dni: string;
+export type UserDocument = HydratedDocument<User>;
 
+@Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } }) // Esto crea created_at y updated_at automáticos
+export class User {
+    // --- DATOS OBLIGATORIOS ---
     @Prop({ required: true })
-    firstName: string; // nombres
+    fullName: string;
 
-    @Prop({ required: true })
-    lastName: string; // apellidos
-
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, unique: true }) // Email único es vital
     email: string;
 
-    @Prop({ required: true })
-    passwordHash: string; // contrasena_hash
+    @Prop({ default: 'local' }) // 'local' o 'google'
+    authProvider: string;
 
-    @Prop()
+    @Prop({ enum: UserRole, default: UserRole.CITIZEN })
+    role: string;
+
+    // --- DATOS OPCIONALES (Para Google) ---
+    @Prop({
+        unique: true,
+        sparse: true,
+        type: String,
+        // 👇 ESTA LÍNEA ES LA MAGIA: Convierte "" en undefined
+        set: (val: string) => (val === '' ? undefined : val)
+    })
+    documentNumber: string;
+
+    @Prop({ required: false })
+    password?: string; // Guardaremos el Hash aquí
+
+    @Prop({
+        unique: true,
+        sparse: true,
+        type: String,
+        set: (val: string) => (val === '' ? undefined : val) // 👇 Aplícalo aquí también
+    })
     phone: string;
 
-    @Prop({ required: true, enum: UserRole, default: UserRole.CITIZEN })
-    role: UserRole;
+    @Prop({ required: false })
+    avatarUrl?: string;
 
-    @Prop()
-    birthDate: Date;
-
-    // --- Ubicación Detallada ---
-    @Prop()
-    addressText: string; // La dirección escrita
-
-    @Prop()
-    district: string;
-
-    @Prop()
-    province: string;
-
-    @Prop()
-    department: string;
-
-    // GeoJSON para mapas (latitud/longitud optimizado para Mongo)
     @Prop({
-        type: { type: String, default: 'Point' },
-        coordinates: { type: [Number], index: '2dsphere' } // [longitud, latitud]
+        unique: true,
+        sparse: true,
+        type: String,
+        set: (val: string) => (val === '' ? undefined : val) // 👇 Y aquí
     })
-    location: { type: string; coordinates: number[] };
+    googleId: string;
 
-    // --- Campos específicos de Reciclador ---
-    @Prop({ default: false })
-    isFormalized: boolean; // es_formalizado
-
-    // --- Gamificación (Acumuladores) ---
+    // --- GAMIFICACIÓN (Valores por defecto) ---
     @Prop({ default: 0 })
-    currentPoints: number; // puntos_actuales
+    total_recycled_kg: number;
 
     @Prop({ default: 0 })
-    greenFootprintCO2: number; // huella_verde_total (CO2 ahorrado)
+    current_points: number;
+
+    @Prop({ default: 1 }) // ID del nivel Semilla
+    level_id: number;
+
+    @Prop({ type: String, default: null })
+    resetPasswordToken: string | null;
+
+    // SOLUCIÓN: Agrega "type: Date" explícitamente
+    @Prop({ type: Date, default: null })
+    resetPasswordExpires: Date | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-// Importante: Crear índice para búsquedas geográficas rápidas
-UserSchema.index({ location: '2dsphere' });
