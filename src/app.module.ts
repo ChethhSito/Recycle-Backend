@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { RecyclingModule } from './modules/recycling/recycling.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MaterialModule } from './modules/material/material.module';
+import { LevelsModule } from './modules/level/levels.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MaterialModule } from './modules/material/material.module';
     RecyclingModule,
     AuthModule,
     MaterialModule,
+    LevelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
