@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config'; // <--- 1. IMPORTANTE: Importar esto
-
+import { CloudinaryModule } from './common/cloudinary.module';
 import { UsersModule } from './modules/users/users.module';
 import { RecyclingModule } from './modules/recycling/recycling.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -19,7 +19,7 @@ import { LevelsModule } from './modules/level/levels.module';
 
     // Ahora sí leerá process.env.MONGO_URI correctamente del archivo .env
     MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://localhost:27017/NosPlanetInfo'),
-
+    CloudinaryModule,
     UsersModule,
     RecyclingModule,
     AuthModule,

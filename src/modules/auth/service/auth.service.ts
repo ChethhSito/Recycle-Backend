@@ -89,8 +89,10 @@ export class AuthService {
       // 2. Crear usuario
       const newUser = await this.usersService.create({
         ...userDto,
-        authProvider: 'local',
-        role: UserRole.CITIZEN,
+        authProvider: userDto.authProvider || 'local',
+
+        // ✅ CORRECCIÓN: Usamos el rol que viene del front, o CITIZEN por defecto
+        role: userDto.role || UserRole.CITIZEN,
       });
 
       // --- NUEVO: ENVIAR CORREO DE BIENVENIDA ---
