@@ -1,10 +1,14 @@
 // src/modules/users/controller/users.controller.ts
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Request, Req, Patch } from '@nestjs/common';
 import { UsersService } from '../service/users.service';
 import { CreateUserDto } from '../dto/users.dto';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
 
 @ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) { }
@@ -34,5 +38,43 @@ export class UsersController {
     @Delete(':id')
     remove(@Param('id') id: string) {
         return this.usersService.remove(id);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('avatar')
+    @UseInterceptors(FileInterceptor('file'))
+    @ApiConsumes('multipart/form-data') // 👈 Le dice a Swagger que es subida de archivo
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: {
+                    type: 'string',
+                    format: 'binary', // 👈 Esto hace que aparezca el botón "Seleccionar archivo"
+                },
+            },
+        },
+    })
+    async uploadAvatar(
+        @Req() req,
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        return this.usersService.updateAvatar(req.user.sub, file);
+    }
+
+    // ======================================================
+    // 👇 2. ENDPOINT QUE TE FALTABA: ACTUALIZAR PERFIL (Texto)
+    // ======================================================
+    @UseGuards(AuthGuard('jwt'))
+    @Patch('profile') // La ruta será: PATCH /users/profile
+    @ApiOperation({ summary: 'Update user profile (Name & Phone)' })
+    @ApiResponse({ status: 200, description: 'User profile updated successfully' })
+    @ApiResponse({ status: 404, description: 'User not found' })
+    async updateProfile(
+        @Req() req,
+        @Body() body: UpdateProfileDto // Recibimos nombre y cel
+    ) {
+        // req.user.sub viene del Token JWT
+        return this.usersService.updateProfile(req.user.sub, body);
     }
 }
