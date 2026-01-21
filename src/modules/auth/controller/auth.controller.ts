@@ -1,8 +1,35 @@
-import { Controller, Get, Req, UseGuards, Res, Post, Body } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Post,
+    Query,
+    HttpCode,
+    HttpStatus,
+    UseGuards,
+    DefaultValuePipe,
+    ParseIntPipe,
+    Patch,
+    UploadedFile,
+    UseInterceptors,
+    Req,
+    Res,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from '../service/auth.service';
 import express from 'express';
 import { CreateUserDto } from 'src/modules/users/dto/users.dto';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiBearerAuth,
+    ApiQuery,
+    ApiBody,
+    ApiConsumes,
+} from '@nestjs/swagger';
+import { LoginUserDto } from 'src/modules/users/dto/login-user.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -61,7 +88,20 @@ export class AuthController {
     }
 
     @Post('login')
-    async login(@Body() body: { email: string; password: string }) {
+    @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Login' })
+    @ApiResponse({ status: HttpStatus.CREATED, description: 'Login successful' })
+    @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid credentials' })
+
+    @ApiBody({ type: LoginUserDto })
+    async login(@Body() body: LoginUserDto) {
+
         return this.authService.login(body);
+    }
+
+    @UseGuards(AuthGuard('jwt')) // <--- ¡Protegido!
+    @Get('check-status')
+    async checkAuthStatus(@Req() req) {
+        return this.authService.checkAuthStatus(req.user);
     }
 }

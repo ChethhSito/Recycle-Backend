@@ -6,7 +6,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './controller/auth.controller';
 import { AuthService } from './service/auth.service';
 import { GoogleStrategy } from './strategies/google.strategy';
-import { UsersModule } from '../users/users.module'; // Importamos UsersModule
+import { UsersModule } from '../users/users.module'; // Importamos UsersModule\
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { UsersModule } from '../users/users.module'; // Importamos UsersModule
         }),
     ],
     controllers: [AuthController],
-    providers: [AuthService, GoogleStrategy],
+    providers: [AuthService, GoogleStrategy, JwtStrategy],
+    exports: [AuthService, JwtStrategy],
 })
 export class AuthModule { }
