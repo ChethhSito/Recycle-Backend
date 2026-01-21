@@ -8,12 +8,9 @@ import { UsersModule } from './modules/users/users.module';
 import { RecyclingModule } from './modules/recycling/recycling.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MaterialModule } from './modules/material/material.module';
-<<<<<<< HEAD
 import { InductionModule } from './modules/induction/induction.module';
 import { PartnersModule } from './modules/partners/partners.module';
-=======
 import { LevelsModule } from './modules/level/levels.module';
->>>>>>> origin
 
 @Module({
   imports: [
@@ -29,12 +26,9 @@ import { LevelsModule } from './modules/level/levels.module';
     RecyclingModule,
     AuthModule,
     MaterialModule,
-<<<<<<< HEAD
     InductionModule,
     PartnersModule,
-=======
     LevelsModule,
->>>>>>> origin
   ],
   controllers: [AppController],
   providers: [AppService],
