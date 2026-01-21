@@ -8,6 +8,8 @@ import { UsersModule } from './modules/users/users.module';
 import { RecyclingModule } from './modules/recycling/recycling.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MaterialModule } from './modules/material/material.module';
+import { InductionModule } from './modules/induction/induction.module';
+import { PartnersModule } from './modules/partners/partners.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { MaterialModule } from './modules/material/material.module';
     RecyclingModule,
     AuthModule,
     MaterialModule,
+    InductionModule,
+    PartnersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
