@@ -55,7 +55,7 @@ export class AuthController {
         // --- REDIRECCIÓN A LA APP MÓVIL (Deep Linking) ---
         // Cambia la IP por la de tu PC (ipconfig/ifconfig)
         // El puerto 8081 es el default de Expo
-        const expoUrl = `exp://192.168.18.8:8081/--/login?token=${jwt.access_token}`;
+        const expoUrl = `exp://192.168.18.9:8081/--/login?token=${jwt.access_token}`;
 
         // Si ya tienes el build de producción (APK), la URL sería algo como: "recycleapp://login?token=..."
 
