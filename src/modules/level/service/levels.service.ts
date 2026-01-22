@@ -9,13 +9,57 @@ export class LevelsService implements OnModuleInit {
         @InjectModel(Level.name) private levelModel: Model<LevelDocument>
     ) { }
 
-    // Se ejecuta automáticamente al iniciar NestJS
     async onModuleInit() {
         const count = await this.levelModel.countDocuments();
         if (count === 0) {
-            console.log('🌱 Sembrando niveles por defecto...');
             await this.seedLevels();
         }
+    }
+
+    async getLevelStatus(currentPoints: number) {
+        // 1. Traemos todos los niveles ordenados
+        const allLevels = await this.levelModel.find().sort({ levelNumber: 1 }).exec();
+
+        if (!allLevels || allLevels.length === 0) return null;
+
+        // 2. Buscamos en qué nivel cae el usuario según sus puntos
+        // (Buscamos el último nivel cuyo minPoints sea menor o igual a los puntos actuales)
+        const currentLevel = allLevels.find(l => currentPoints >= l.minPoints && currentPoints <= l.maxPoints)
+            || allLevels[allLevels.length - 1]; // Si tiene mil millones de puntos, le damos el último nivel
+
+        // 3. Buscamos el siguiente nivel
+        const nextLevel = allLevels.find(l => l.levelNumber === currentLevel.levelNumber + 1);
+
+        // 4. Calculamos porcentaje de progreso (0 a 1)
+        // Fórmula: (PuntosActuales - MinNivel) / (MaxNivel - MinNivel)
+        let progress = 0;
+        if (nextLevel) {
+            const range = currentLevel.maxPoints - currentLevel.minPoints;
+            const pointsInLevel = currentPoints - currentLevel.minPoints;
+            progress = range > 0 ? (pointsInLevel / range) : 1;
+        } else {
+            progress = 1; // Si es nivel máximo, barra llena
+        }
+
+        // 5. Devolvemos el objeto bonito para el frontend
+        return {
+            currentLevel: {
+                name: currentLevel.name,
+                icon: currentLevel.iconName,
+                color: currentLevel.primaryColor,
+                bgColor: currentLevel.bgColor,
+                rank: `Nivel ${currentLevel.levelNumber}`
+            },
+            nextLevel: {
+                name: nextLevel ? nextLevel.name : 'Nivel Máximo',
+                pointsRequired: nextLevel ? nextLevel.minPoints : currentPoints
+            },
+            progress: parseFloat(progress.toFixed(2)), // Redondeamos a 2 decimales (ej: 0.66)
+            points: {
+                current: currentPoints,
+                max: currentLevel.maxPoints
+            }
+        };
     }
 
     async seedLevels() {

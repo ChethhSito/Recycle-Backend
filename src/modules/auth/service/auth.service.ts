@@ -6,12 +6,14 @@ import { User, UserDocument } from 'src/modules/users/schema/users.schema';
 import * as nodemailer from 'nodemailer';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from 'src/modules/users/dto/users.dto';
+import { LevelsService } from 'src/modules/level/service/levels.service';
 @Injectable()
 export class AuthService {
   private transporter;
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly levelsService: LevelsService,
   ) {
     this.transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -166,6 +168,7 @@ export class AuthService {
 
   // 2. Generar el Token JWT (El "Carnet" de acceso)
   async generateJwt(user: UserDocument) {
+    const gamification = await this.levelsService.getLevelStatus(user.current_points);
     const payload = {
       sub: user._id, // ID del usuario en Mongo
       email: user.email,
@@ -179,10 +182,11 @@ export class AuthService {
         email: user.email,
         role: user.role,
         fullName: user.fullName,
-        avatarUrl: user.avatarUrl,
+        avatar: user.avatarUrl,
         authProvider: user.authProvider,
         googleId: user.googleId,
         phone: user.phone,
+        gamification: gamification,
         dni: user.documentNumber,
         level: user.level_id,
         points: user.current_points,
@@ -332,23 +336,6 @@ export class AuthService {
     }
 
     // 2. Retornamos el token y el usuario actualizado
-    return {
-      access_token: this.jwtService.sign({
-        sub: dbUser._id,
-        email: dbUser.email,
-        role: dbUser.role
-      }),
-      user: {
-        uid: dbUser._id,
-        email: dbUser.email,
-        fullName: dbUser.fullName,
-        role: dbUser.role,
-        avatar: dbUser.avatarUrl,
-
-        // 👇 CORRECCIÓN AQUÍ: Usamos los nombres reales de tu Schema
-        level: dbUser.level_id,           // Antes decía dbUser.level
-        points: dbUser.current_points,    // Antes decía dbUser.points
-      }
-    };
+    return this.generateJwt(dbUser);
   }
 }
