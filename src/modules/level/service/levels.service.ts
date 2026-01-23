@@ -148,7 +148,7 @@ export class LevelsService implements OnModuleInit {
         await this.levelModel.deleteMany({});
 
         await this.levelModel.insertMany(levels);
-        console.log('✅ Niveles creados exitosamente');
+
     }
     // Método para que el frontend obtenga la lista
     async findAll() {

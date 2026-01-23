@@ -11,6 +11,7 @@ import { MaterialModule } from './modules/material/material.module';
 import { InductionModule } from './modules/induction/induction.module';
 import { PartnersModule } from './modules/partners/partners.module';
 import { LevelsModule } from './modules/level/levels.module';
+import { ProgramsModule } from './modules/programs/programs.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { LevelsModule } from './modules/level/levels.module';
     LevelsModule,
     InductionModule,
     PartnersModule,
+    ProgramsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
