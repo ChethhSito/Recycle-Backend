@@ -12,6 +12,7 @@ import { InductionModule } from './modules/induction/induction.module';
 import { PartnersModule } from './modules/partners/partners.module';
 import { LevelsModule } from './modules/level/levels.module';
 import { ProgramsModule } from './modules/programs/programs.module';
+import { RewardsModule } from './modules/reward/reward.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ProgramsModule } from './modules/programs/programs.module';
     InductionModule,
     PartnersModule,
     ProgramsModule,
+    RewardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
