@@ -13,6 +13,7 @@ import { PartnersModule } from './modules/partners/partners.module';
 import { LevelsModule } from './modules/level/levels.module';
 import { ProgramsModule } from './modules/programs/programs.module';
 import { RewardsModule } from './modules/reward/reward.module';
+import { ForumModule } from './modules/forum/forum.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { RewardsModule } from './modules/reward/reward.module';
     PartnersModule,
     ProgramsModule,
     RewardsModule,
+    ForumModule,
   ],
   controllers: [AppController],
   providers: [AppService],

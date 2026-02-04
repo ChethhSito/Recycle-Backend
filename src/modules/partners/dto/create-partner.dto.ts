@@ -1,5 +1,6 @@
 import { IsString, IsNumber, IsBoolean, IsOptional, IsUrl, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class CreatePartnerDto {
     @ApiProperty({ description: 'Name of the partner', example: 'Nos Planét' })
@@ -17,7 +18,13 @@ export class CreatePartnerDto {
 
     @ApiProperty({ description: 'Logo URL', example: 'https://example.com/logo.png' })
     @IsString()
-    @IsUrl()
+    @Transform(({ value }) => {
+        if (typeof value === 'string' && value.length > 0) {
+            // Si ya tiene http o https, lo dejamos igual. Si no, le pegamos https://
+            return value.startsWith('http') ? value : `https://${value}`;
+        }
+        return value;
+    })
     logo: string;
 
     @ApiProperty({ description: 'Main Brand Color (Hex)', example: '#002C77' })
