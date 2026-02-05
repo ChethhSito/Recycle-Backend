@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, NotFoundException, UnauthorizedException, Delete } from '@nestjs/common';
 import { ForumService } from '../service/forum.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CreatePostDto } from '../dto/create-post.dto';
@@ -38,7 +38,15 @@ export class ForumController {
     @UseGuards(AuthGuard('jwt'))
     @ApiOperation({ summary: 'Dar o quitar like a un post' })
     toggleLike(@Param('id') id: string, @Request() req) {
-        return this.forumService.toggleLike(id, req.user.id);
+        // 👇 AGREGA ESTO IGUAL QUE EN 'create'
+        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
+
+        // Validación de seguridad extra
+        if (!userId) {
+            throw new UnauthorizedException('No se pudo obtener el ID del usuario');
+        }
+
+        return this.forumService.toggleLike(id, userId);
     }
     @Post('comment')
     @UseGuards(AuthGuard('jwt'))
@@ -53,5 +61,21 @@ export class ForumController {
     @ApiOperation({ summary: 'Ver los comentarios de un post específico' })
     getComments(@Param('id') postId: string) {
         return this.forumService.findCommentsByPost(postId);
+    }
+
+    @Get('my-posts')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Ver solo mis posts' })
+    findMyPosts(@Request() req) {
+        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
+        return this.forumService.findByAuthor(userId);
+    }
+
+    @Delete(':id') // 👈 Usamos el decorador DELETE
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: 'Eliminar un post (Solo el autor)' })
+    deletePost(@Param('id') id: string, @Request() req) {
+        const userId = req.user.id || req.user.userId || req.user._id || req.user.sub;
+        return this.forumService.deletePost(id, userId);
     }
 }

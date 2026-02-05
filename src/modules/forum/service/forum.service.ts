@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ForumPost } from '../schema/forum-post.schema';
@@ -16,7 +16,10 @@ export class ForumService {
             ...createPostDto,
             author: userId,
         });
-        return newPost.save();
+        await newPost.save();
+
+        // 2. Populamos el autor para devolverlo completo al frontend
+        return newPost.populate('author', 'fullName avatarUrl');
     }
 
     // Obtener feed con datos del autor (Nombre y Avatar)
@@ -30,17 +33,26 @@ export class ForumService {
 
     async toggleLike(postId: string, userId: string) {
         const post = await this.postModel.findById(postId);
-        if (!post) {
-            throw new Error('Post no encontrado');
-        }
-        const index = post.likes.indexOf(new Types.ObjectId(userId));
 
-        if (index === -1) {
-            post.likes.push(new Types.ObjectId(userId));
-        } else {
-            post.likes.splice(index, 1);
+        if (!post) {
+            throw new NotFoundException('Post no encontrado');
         }
-        return post.save();
+
+        if (!post.likes) {
+            post.likes = [];
+        }
+
+        const userIdStr = userId.toString();
+        const isLiked = post.likes.some((id) => id && id.toString() === userIdStr);
+
+        if (isLiked) {
+            post.likes = post.likes.filter((id) => id && id.toString() !== userIdStr);
+        } else {
+            post.likes.push(new Types.ObjectId(userIdStr));
+        }
+
+        await post.save();
+        return post.populate('author', 'fullName avatarUrl');
     }
 
     async addComment(userId: string, createCommentDto: any) {
@@ -59,7 +71,7 @@ export class ForumService {
             $inc: { commentsCount: 1 } // Suma 1 al contador automáticamente
         });
 
-        return newComment;
+        return newComment.populate('author', 'fullName avatarUrl');
     }
 
     async findCommentsByPost(postId: string) {
@@ -67,5 +79,25 @@ export class ForumService {
             .populate('author', 'fullName avatarUrl') // Para ver quién escribió
             .sort({ createdAt: 1 }) // Los más viejos primero (orden cronológico)
             .exec();
+    }
+
+    async findByAuthor(userId: string) {
+        return this.postModel.find({ author: userId })
+            .populate('author', 'fullName avatarUrl')
+            .sort({ createdAt: -1 })
+            .exec();
+    }
+
+    async deletePost(postId: string, userId: string) {
+        const post = await this.postModel.findById(postId);
+
+        if (!post) throw new NotFoundException('Post no encontrado');
+
+        // Convertimos a string para comparar IDs de forma segura
+        if (post.author.toString() !== userId.toString()) {
+            throw new UnauthorizedException('No tienes permiso para borrar este post');
+        }
+
+        return this.postModel.findByIdAndDelete(postId);
     }
 }
