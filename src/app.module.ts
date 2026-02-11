@@ -14,6 +14,7 @@ import { LevelsModule } from './modules/level/levels.module';
 import { ProgramsModule } from './modules/programs/programs.module';
 import { RewardsModule } from './modules/reward/reward.module';
 import { ForumModule } from './modules/forum/forum.module';
+import { RequestModule } from './modules/request/request.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ForumModule } from './modules/forum/forum.module';
     ProgramsModule,
     RewardsModule,
     ForumModule,
+    RequestModule,
   ],
   controllers: [AppController],
   providers: [AppService],
