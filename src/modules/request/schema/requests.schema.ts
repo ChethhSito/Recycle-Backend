@@ -66,6 +66,9 @@ export class Request {
 
     @Prop({ default: 0 })
     estimatedPoints: number;
+
+    @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+    collector: Types.ObjectId;
 }
 
 export const RequestSchema = SchemaFactory.createForClass(Request);

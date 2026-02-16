@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Request, RequestDocument } from '../schema/requests.schema';
 import { CreateRequestDto } from '../dto/create-request.dto';
 
@@ -73,5 +73,31 @@ export class RequestsService {
         })
             .populate('citizen', 'fullName avatarUrl') // Traer datos del usuario si quieres
             .exec();
+    }
+
+
+    async acceptRequest(requestId: string, collectorId: string) {
+        // 1. Buscar la solicitud
+        const request = await this.requestModel.findById(requestId);
+
+        if (!request) {
+            throw new NotFoundException('Solicitud no encontrada');
+        }
+
+        // 2. Validar que no esté ya aceptada
+        if (request.status !== 'PENDING') {
+            throw new BadRequestException('Esta solicitud ya fue aceptada por otro reciclador.');
+        }
+
+        // 3. Evitar que el mismo ciudadano acepte su propia solicitud (Opcional)
+        if (request.citizen.toString() === collectorId) {
+            throw new BadRequestException('No puedes aceptar tu propia solicitud.');
+        }
+
+        // 4. Actualizar estado y asignar recolector
+        request.status = 'ACCEPTED';
+        request.collector = new Types.ObjectId(collectorId); // Asignar ID
+
+        return await request.save();
     }
 }

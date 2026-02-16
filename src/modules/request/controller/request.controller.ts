@@ -9,7 +9,8 @@ import {
     UseInterceptors,
     UploadedFile,
     BadRequestException,
-    Query
+    Query,
+    Patch
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RequestsService } from '../service/request.service';
@@ -100,9 +101,17 @@ export class RequestsController {
         // Devolvemos la URL (suponiendo que sirves la carpeta uploads como estática)
         // Ojo: Cambia localhost por tu IP si pruebas en celular físico
         return {
-            url: `http://192.168.1.XX:3000/uploads/${file.filename}`
+            url: `http://192.168.18.8:3000/uploads/${file.filename}`
         };
     }
 
-
+    @Patch(':id/accept')
+    async acceptRequest(
+        @Param('id') id: string,
+        @Req() req
+    ) {
+        // Asumimos que req.user tiene el ID del usuario logueado (gracias al Guard)
+        const collectorId = req.user.userId; // O req.user._id según tu estrategia JWT
+        return this.requestsService.acceptRequest(id, collectorId);
+    }
 }
