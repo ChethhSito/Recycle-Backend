@@ -15,17 +15,21 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RequestsService } from '../service/request.service';
 import { AuthGuard } from '@nestjs/passport';
-import { diskStorage } from 'multer'; // Para guardar imágenes localmente (o usa S3/Cloudinary)
+import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { CloudinaryService } from 'src/common/cloudinary.service';
 
 @Controller('requests')
-@UseGuards(AuthGuard('jwt')) //Todo este controlador requiere Token
+@UseGuards(AuthGuard('jwt'))
 export class RequestsController {
     constructor(
         private readonly cloudinaryService: CloudinaryService,
         private readonly requestsService: RequestsService) { }
 
+    // Función auxiliar interna para obtener el ID de forma robusta
+    private getUserId(req: any): string {
+        return req.user?.userId || req.user?.id || req.user?._id || req.user?.sub;
+    }
 
     @Get('nearby')
     findNearby(
@@ -33,64 +37,77 @@ export class RequestsController {
         @Query('lng') lng: number,
         @Query('km') km: number = 10
     ) {
-        // NestJS recibe los query params como strings, asegúrate de convertirlos
         return this.requestsService.findNearby(Number(lat), Number(lng), Number(km));
     }
 
-    // POST /requests -> Crear solicitud
     @Post()
-    @UseInterceptors(FileInterceptor('file')) // 'file' es el nombre del campo en el FormData del front
+    @UseInterceptors(FileInterceptor('file'))
     async create(@Req() req, @Body() body: any, @UploadedFile() file: Express.Multer.File) {
-
-        console.log("Usuario detectado en Request:", req.user);
         if (!file) throw new BadRequestException('La evidencia (foto) es obligatoria');
 
-        // 1. Subir a Cloudinary
         const imageResult = await this.cloudinaryService.uploadFile(file);
-        const userId = req.user?.userId || req.user?.id || req.user?._id || req.user?.sub;
-        if (!userId) {
-            throw new BadRequestException('No se pudo identificar al usuario (Token inválido)');
-        }
+        const userId = this.getUserId(req);
 
-        // 2. Crear solicitud con la URL y los datos del body
-        // Nota: 'body' llega como strings en multipart, hay que parsear números si es necesario
+        if (!userId) throw new BadRequestException('Usuario no identificado');
+
         return this.requestsService.create(userId, {
             ...body,
             imageUrl: imageResult.secure_url
         });
     }
 
-    // GET /requests/mine -> Ver mis solicitudes
     @Get('mine')
     findAllMine(@Req() req) {
-        // 👇 1. AGREGAMOS LOG PARA VER QUIÉN PIDE LA LISTA
-        console.log("Usuario solicitando historial:", req.user);
-
-        // 👇 2. USAMOS LA MISMA LÓGICA ROBUSTA QUE EN EL CREATE
-        const userId = req.user?.userId || req.user?.id || req.user?._id || req.user?.sub;
-
-        if (!userId) {
-            // Si no hay ID, retornamos array vacío o lanzamos error
-            console.log("Error: No se encontró User ID en el token");
-            return [];
-        }
-
+        const userId = this.getUserId(req);
         return this.requestsService.findAllMyRequests(userId);
     }
 
-    // GET /requests/:id -> Ver detalle de una
+    // 1. OBTENER DETALLE SEGURO (Aseguramos el ID correcto)
     @Get(':id')
-    findOne(@Param('id') id: string) {
-        return this.requestsService.findOne(id);
+    findOne(@Param('id') id: string, @Req() req) {
+        const userId = this.getUserId(req);
+        return this.requestsService.findOneSecure(id, userId);
     }
 
-    // POST /requests/upload -> Subir Imagen
-    // Nota: Esto guarda la imagen en una carpeta 'uploads' local. 
-    // Para producción, idealmente usarías Cloudinary o AWS S3.
+    @Patch(':id/accept')
+    async acceptRequest(@Param('id') id: string, @Req() req) {
+        const collectorId = this.getUserId(req);
+        return this.requestsService.acceptRequest(id, collectorId);
+    }
+
+    // 2. NUEVO: CANCELAR SOLICITUD (Para el ciudadano)
+    @Patch(':id/cancel')
+    async cancelRequest(@Param('id') id: string, @Req() req) {
+        const userId = this.getUserId(req);
+        return this.requestsService.cancelRequest(id, userId);
+    }
+
+    // 3. NUEVO: FINALIZAR RECOJO (Para el reciclador)
+    // Este endpoint es el que debería gatillar la entrega de puntos
+    @Patch(':id/complete')
+    @UseInterceptors(FileInterceptor('file'))
+    async completeRequest(
+        @Param('id') id: string,
+        @Req() req,
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        if (!file) throw new BadRequestException('La foto de evidencia es obligatoria para finalizar.');
+
+        // 1. Subir la foto a Cloudinary
+        const imageResult = await this.cloudinaryService.uploadFile(file);
+
+        // 2. Usar tu función auxiliar para obtener el ID de forma robusta
+        const collectorId = this.getUserId(req);
+
+        // 3. Llamar al servicio
+        return this.requestsService.completeRequest(id, collectorId, imageResult.secure_url);
+    }
+
+    // Mantienes tu upload local si lo usas para pruebas temporales
     @Post('upload')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
-            destination: './uploads', // Carpeta donde se guardan
+            destination: './uploads',
             filename: (req, file, cb) => {
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('');
                 return cb(null, `${randomName}${extname(file.originalname)}`);
@@ -98,20 +115,8 @@ export class RequestsController {
         })
     }))
     uploadFile(@UploadedFile() file: Express.Multer.File) {
-        // Devolvemos la URL (suponiendo que sirves la carpeta uploads como estática)
-        // Ojo: Cambia localhost por tu IP si pruebas en celular físico
         return {
-            url: `http://192.168.18.8:3000/uploads/${file.filename}`
+            url: `http://192.168.18.9:3000/uploads/${file.filename}`
         };
-    }
-
-    @Patch(':id/accept')
-    async acceptRequest(
-        @Param('id') id: string,
-        @Req() req
-    ) {
-        // Asumimos que req.user tiene el ID del usuario logueado (gracias al Guard)
-        const collectorId = req.user.userId; // O req.user._id según tu estrategia JWT
-        return this.requestsService.acceptRequest(id, collectorId);
     }
 }

@@ -69,6 +69,12 @@ export class Request {
 
     @Prop({ type: Types.ObjectId, ref: 'User', default: null })
     collector: Types.ObjectId;
+
+    @Prop({ type: Date, default: null })
+    completedAt: Date;
+
+    @Prop({ type: String })
+    evidenceUrl: string;
 }
 
 export const RequestSchema = SchemaFactory.createForClass(Request);
