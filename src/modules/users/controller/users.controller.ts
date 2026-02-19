@@ -19,10 +19,6 @@ export class UsersController {
         return this.usersService.create(createUserDto);
     }
 
-    // --- OJO: Estos endpoints deberían estar protegidos en el futuro ---
-    // No quieres que cualquiera pueda ver todos los usuarios.
-    // Más adelante le agregaremos @UseGuards(JwtAuthGuard)
-
     @Get()
     @ApiOperation({ summary: 'Get all users' })
     findAll() {
@@ -43,14 +39,14 @@ export class UsersController {
     @UseGuards(AuthGuard('jwt'))
     @Post('avatar')
     @UseInterceptors(FileInterceptor('file'))
-    @ApiConsumes('multipart/form-data') // 👈 Le dice a Swagger que es subida de archivo
+    @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
             type: 'object',
             properties: {
                 file: {
                     type: 'string',
-                    format: 'binary', // 👈 Esto hace que aparezca el botón "Seleccionar archivo"
+                    format: 'binary',
                 },
             },
         },
@@ -62,19 +58,15 @@ export class UsersController {
         return this.usersService.updateAvatar(req.user.sub, file);
     }
 
-    // ======================================================
-    // 👇 2. ENDPOINT QUE TE FALTABA: ACTUALIZAR PERFIL (Texto)
-    // ======================================================
     @UseGuards(AuthGuard('jwt'))
-    @Patch('profile') // La ruta será: PATCH /users/profile
+    @Patch('profile')
     @ApiOperation({ summary: 'Update user profile (Name & Phone)' })
     @ApiResponse({ status: 200, description: 'User profile updated successfully' })
     @ApiResponse({ status: 404, description: 'User not found' })
     async updateProfile(
         @Req() req,
-        @Body() body: UpdateProfileDto // Recibimos nombre y cel
+        @Body() body: UpdateProfileDto
     ) {
-        // req.user.sub viene del Token JWT
         return this.usersService.updateProfile(req.user.sub, body);
     }
 }

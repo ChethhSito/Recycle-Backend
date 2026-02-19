@@ -47,6 +47,12 @@ export class Partner {
 
     @Prop({ default: false })
     isPinned: boolean;
+
+    @Prop({ default: false })
+    isVisible: boolean; // Controls visibility on Landing Page
+
+    @Prop({ default: false })
+    isLocked: boolean; // If true, requires editing before it can be visible
 }
 
 export const PartnerSchema = SchemaFactory.createForClass(Partner);

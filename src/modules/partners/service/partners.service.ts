@@ -17,6 +17,25 @@ export class PartnersService {
         return createdPartner.save();
     }
 
+    async createFromRequest(requestData: any): Promise<Partner> {
+        // Evitar duplicados si ya existe un socio con el mismo nombre
+        const existing = await this.partnerModel.findOne({ name: requestData.name }).exec();
+        if (existing) return existing;
+
+        const newPartner = new this.partnerModel({
+            name: requestData.name,
+            filterType: 'all', // Default
+            typeLabel: 'Empresa', // Default
+            logo: 'https://via.placeholder.com/150', // Placeholder
+            mainColor: '#018F64', // Default Green
+            description: requestData.message || 'Descripción pendiente.',
+            environmentalCommitment: 'Compromiso pendiente.',
+            isLocked: true,
+            isVisible: false,
+        });
+        return newPartner.save();
+    }
+
     async findAll(): Promise<Partner[]> {
         // Sort pinned items first
         return this.partnerModel.find().sort({ isPinned: -1, _id: -1 }).exec();

@@ -51,4 +51,14 @@ export class CreatePartnerDto {
     @IsBoolean()
     @IsOptional()
     isPinned?: boolean;
+
+    @ApiProperty({ description: 'Visible on landing page', example: true, required: false })
+    @IsBoolean()
+    @IsOptional()
+    isVisible?: boolean;
+
+    @ApiProperty({ description: 'Requires completion before visibility', example: false, required: false })
+    @IsBoolean()
+    @IsOptional()
+    isLocked?: boolean;
 }
