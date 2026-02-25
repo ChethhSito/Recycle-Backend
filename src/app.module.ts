@@ -15,6 +15,7 @@ import { ProgramsModule } from './modules/programs/programs.module';
 import { RewardsModule } from './modules/reward/reward.module';
 import { ForumModule } from './modules/forum/forum.module';
 import { RequestModule } from './modules/request/request.module';
+import { EcoHistoryModule } from './modules/eco-histories/eco-history.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { RequestModule } from './modules/request/request.module';
     RewardsModule,
     ForumModule,
     RequestModule,
+    EcoHistoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
