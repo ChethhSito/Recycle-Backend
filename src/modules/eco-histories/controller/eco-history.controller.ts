@@ -34,7 +34,7 @@ export class EcoHistoryController {
 
     @Get('admin')
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.OFFICIAL)
+    @Roles(UserRole.ADMIN, UserRole.MANAGER)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all histories for administration' })
     findAll() {
@@ -43,7 +43,7 @@ export class EcoHistoryController {
 
     @Patch(':id/status')
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.OFFICIAL)
+    @Roles(UserRole.ADMIN, UserRole.MANAGER)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Approve or reject a history' })
     updateStatus(@Param('id') id: string, @Body() updateDto: UpdateEcoHistoryStatusDto) {
@@ -52,7 +52,7 @@ export class EcoHistoryController {
 
     @Patch(':id/featured')
     @UseGuards(AuthGuard('jwt'), RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.OFFICIAL)
+    @Roles(UserRole.ADMIN, UserRole.MANAGER)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Toggle featured status' })
     toggleFeatured(@Param('id') id: string) {

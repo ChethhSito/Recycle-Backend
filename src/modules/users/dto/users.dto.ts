@@ -67,5 +67,12 @@ export class CreateUserDto {
     @IsString()
     googleId?: string;
 
-
+    @ApiProperty({
+        example: 'Municipalidad de Lima',
+        description: 'Institution or Municipality for Gestores',
+        required: false
+    })
+    @IsOptional()
+    @IsString()
+    institution?: string;
 }

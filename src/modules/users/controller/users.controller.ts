@@ -69,4 +69,10 @@ export class UsersController {
     ) {
         return this.usersService.updateProfile(req.user.sub, body);
     }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update user by ID (Admin)' })
+    update(@Param('id') id: string, @Body() updateData: any) {
+        return this.usersService.update(id, updateData);
+    }
 }
