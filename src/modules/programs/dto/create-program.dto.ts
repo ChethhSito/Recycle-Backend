@@ -92,4 +92,14 @@ export class CreateProgramDto {
     @IsOptional()
     @IsString()
     imageUrl?: string;
+
+    @ApiProperty({ example: '2023-10-01', description: 'Fecha del programa' })
+    @IsOptional()
+    @IsString()
+    date?: string;
+
+    @ApiProperty({ example: 'PROYECTO', description: 'Categoría del programa' })
+    @IsOptional()
+    @IsString()
+    category?: string;
 }

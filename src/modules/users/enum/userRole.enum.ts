@@ -1,6 +1,6 @@
 export enum UserRole {
     ADMIN = 'ADMIN',
-    OFFICIAL = 'OFFICIAL', // Funcionario / Municipalidad
+    MANAGER = 'MANAGER', // Antes OFFICIAL
     CITIZEN = 'CITIZEN',
     RECYCLER = 'RECYCLER', // Reciclador
     BUSINESS = 'BUSINESS',

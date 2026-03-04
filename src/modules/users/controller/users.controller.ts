@@ -77,4 +77,10 @@ export class UsersController {
 
         return await this.usersService.update(userId, { pushToken }); //
     }
+
+    @Patch(':id')
+    @ApiOperation({ summary: 'Update user by ID (Admin)' })
+    update(@Param('id') id: string, @Body() updateData: any) {
+        return this.usersService.update(id, updateData);
+    }
 }

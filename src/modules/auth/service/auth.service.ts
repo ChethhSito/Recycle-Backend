@@ -167,10 +167,13 @@ export class AuthService {
   }
 
   // 2. Generar el Token JWT (El "Carnet" de acceso)
-  async generateJwt(user: UserDocument) {
-    const gamification = await this.levelsService.getLevelStatus(user.current_points);
+  async generateJwt(user: any) {
+    const profile = user.profile || {};
+    const currentPoints = profile.current_points || 0;
+    const gamification = await this.levelsService.getLevelStatus(currentPoints);
+
     const payload = {
-      sub: user._id, // ID del usuario en Mongo
+      sub: user._id,
       email: user.email,
       role: user.role
     };
@@ -186,11 +189,12 @@ export class AuthService {
         authProvider: user.authProvider,
         googleId: user.googleId,
         phone: user.phone,
+        institution: profile.institution || null,
         gamification: gamification,
         recyclingStats: user.recyclingStats,
         dni: user.documentNumber,
-        level: user.level_id,
-        points: user.current_points,
+        level: profile.level_id || 1,
+        points: currentPoints,
       }
     };
   }

@@ -119,4 +119,20 @@ export class RequestsController {
             url: `http://192.168.18.9:3000/uploads/${file.filename}`
         };
     }
+    @Get('available')
+    async findAllAvailable() {
+        return this.requestsService.findAllPendingPool();
+    }
+
+    @Get('managed')
+    async findAllManaged(@Req() req) {
+        const userId = this.getUserId(req);
+        return this.requestsService.findAllByOfficial(userId);
+    }
+
+    @Patch(':id/manage')
+    async manageRequest(@Param('id') id: string, @Req() req) {
+        const userId = this.getUserId(req);
+        return this.requestsService.manageRequest(id, userId);
+    }
 }

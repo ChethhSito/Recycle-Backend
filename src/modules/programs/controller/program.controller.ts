@@ -1,31 +1,33 @@
-import { Controller, Get, Param, Post, Body, Patch, Delete } from "@nestjs/common";
+import { Controller, Get, Param, Post, Body, Patch, Delete, UseGuards, Req } from "@nestjs/common";
 import { ProgramsService } from "../service/program.service";
 import { CreateProgramDto } from "../dto/create-program.dto";
 import { UpdateProgramDto } from "../dto/update-program.dto";
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { ProgramType } from "../enum/progra-type.enum";
 import { Program } from "../schema/program.schema";
+import { AuthGuard } from "@nestjs/passport";
 
 @ApiTags('Programs')
 @Controller('programs')
+@UseGuards(AuthGuard('jwt'))
 export class ProgramsController {
     constructor(private readonly programsService: ProgramsService) { }
 
     @Get()
     @ApiOperation({ summary: 'Listar todos los programas' })
-    async findAll() {
-        return this.programsService.findAll();
+    async findAll(@Req() req) {
+        return this.programsService.findAll(req.user);
     }
 
     @Post()
     @ApiOperation({ summary: 'Crear un nuevo programa ambiental' })
     @ApiBody({ type: CreateProgramDto })
     @ApiResponse({ status: 201, description: 'Programa creado exitosamente', type: Program })
-    async create(@Body() createProgramDto: CreateProgramDto) {
-        return this.programsService.create(createProgramDto);
+    async create(@Body() createProgramDto: CreateProgramDto, @Req() req) {
+        return this.programsService.create(createProgramDto, req.user);
     }
 
-    @Get(':programType')
+    @Get('filter/:programType')
     @ApiOperation({ summary: 'Listar todos los programas por tipo' })
     @ApiParam({ name: 'programType', description: 'Tipo de programa' })
     async findAllProgramType(@Param('programType') programType: ProgramType) {

@@ -70,6 +70,9 @@ export class Request {
     @Prop({ type: Types.ObjectId, ref: 'User', default: null })
     collector: Types.ObjectId;
 
+    @Prop({ type: Types.ObjectId, ref: 'User', default: null })
+    managedBy: Types.ObjectId;
+
     @Prop({ type: Date, default: null })
     completedAt: Date;
 

@@ -55,7 +55,19 @@ export class Program {
     contact: ContactInfo;
 
     @Prop({ default: true })
-    isActive: boolean; // Para ocultar programas viejos sin borrarlos
+    isActive: boolean;
+
+    @Prop({ type: String, default: null })
+    institution: string;
+
+    @Prop({ type: String, ref: 'User', default: null })
+    managedBy: string;
+
+    @Prop({ required: false })
+    date: string;
+
+    @Prop({ required: false, default: 'PROYECTO' })
+    category: string;
 }
 
 export const ProgramSchema = SchemaFactory.createForClass(Program);
