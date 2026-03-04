@@ -69,4 +69,12 @@ export class UsersController {
     ) {
         return this.usersService.updateProfile(req.user.sub, body);
     }
+
+    @UseGuards(AuthGuard('jwt')) // Solo usuarios logueados
+    @Patch('update-push-token')
+    async updatePushToken(@Req() req, @Body('pushToken') pushToken: string) {
+        const userId = req.user.userId; // Extraído del JWT
+
+        return await this.usersService.update(userId, { pushToken }); //
+    }
 }

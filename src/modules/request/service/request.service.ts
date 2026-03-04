@@ -4,20 +4,28 @@ import { Model, Types } from 'mongoose';
 import { Request, RequestDocument } from '../schema/requests.schema';
 import { User, UserDocument } from 'src/modules/users/schema/users.schema';
 import { CreateRequestDto } from '../dto/create-request.dto';
+import { Level, LevelDocument } from 'src/modules/level/schema/levels.schema';
 
 @Injectable()
 export class RequestsService {
     constructor(
         @InjectModel(Request.name) private requestModel: Model<RequestDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>, // Asumiendo que tu schema de usuario se llama 'User'
+        @InjectModel('Level') private levelModel: Model<LevelDocument>,
     ) { }
 
     // 1. Crear una solicitud (Vinculada al usuario logueado)
     async create(userId: string, data: any) {
+        let points = 0;
+        const quantity = parseFloat(data.quantity);
 
-        const points = Math.round(parseFloat(data.quantity) * 10);
+        // Lógica de puntos: Valoramos más el peso por densidad
+        if (data.measureType === 'peso') {
+            points = Math.round(quantity * 25); // 25 pts por Kg
+        } else {
+            points = Math.round(quantity * 10); // 10 pts por Unidad/Bolsa
+        }
 
-        // Parseamos la ubicación que viene del front (FormData envía strings)
         const rawLocation = typeof data.location === 'string'
             ? JSON.parse(data.location)
             : data.location;
@@ -26,13 +34,12 @@ export class RequestsService {
             citizen: userId,
             category: data.category,
             materialType: data.materialType,
-            quantity: parseFloat(data.quantity),
+            quantity: quantity,
             description: data.description,
             measureType: data.measureType,
             imageUrl: data.imageUrl,
             estimatedPoints: points,
             status: 'PENDING',
-
             location: {
                 type: 'Point',
                 coordinates: [rawLocation.longitude, rawLocation.latitude],
@@ -119,9 +126,35 @@ export class RequestsService {
         }
         // 4. Actualizar estado y asignar recolector
         request.status = 'ACCEPTED';
-        request.collector = new Types.ObjectId(collectorId); // Asignar ID
+        request.collector = new Types.ObjectId(collectorId);
+        await request.save();
 
-        return await request.save();
+        // 🚨 ENVIAR NOTIFICACIÓN AL CIUDADANO
+        const citizen = request.citizen as any; // Documento de usuario poblado
+        if (citizen.pushToken) {
+            await this.sendPushNotification(
+                citizen.pushToken,
+                "¡Reciclador en camino! ♻️",
+                `Tu solicitud de ${request.category} ha sido aceptada.`
+            );
+        }
+        return request;
+    }
+
+    private async sendPushNotification(expoPushToken: string, title: string, body: string) {
+        const message = {
+            to: expoPushToken,
+            sound: 'default',
+            title: title,
+            body: body,
+            data: { someData: 'goes here' },
+        };
+
+        await fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(message),
+        });
     }
 
 
@@ -148,36 +181,70 @@ export class RequestsService {
         const request = await this.requestModel.findById(requestId);
         if (!request) throw new NotFoundException('Solicitud no encontrada');
 
-        // SEGURIDAD: Comparación robusta
         if (request.collector?.toString() !== collectorId.toString()) {
             throw new BadRequestException('No tienes permiso para completar esta solicitud.');
         }
 
-        // VALIDACIÓN DE ESTADO
         if (request.status !== 'ACCEPTED') {
-            throw new BadRequestException('La solicitud debe estar aceptada para poder finalizarla.');
+            throw new BadRequestException('La solicitud debe estar aceptada para finalizarla.');
         }
 
-        // ACTUALIZACIÓN DE DATOS
+        // --- ACTUALIZACIÓN DE LA SOLICITUD ---
         request.status = 'COMPLETED';
         request.completedAt = new Date();
-
-        // Guardamos la foto que el reciclador acaba de tomar
-        // Nota: Asegúrate de que 'evidenceUrl' esté en tu Schema
         (request as any).evidenceUrl = evidenceUrl;
-
         await request.save();
 
-        // ASIGNAR PUNTOS AL CIUDADANO (current_points según tu DB)
-        await this.userModel.findByIdAndUpdate(
-            request.citizen,
-            { $inc: { current_points: request.estimatedPoints } }
-        );
+        // --- LÓGICA DE USUARIO Y GAMIFICACIÓN ---
+        const user = await this.userModel.findById(request.citizen);
+        if (!user) throw new NotFoundException('Usuario no encontrado');
+
+        const newTotalPoints = (user.current_points || 0) + request.estimatedPoints;
+
+        // Buscamos el nivel correspondiente
+        const correctLevel = await this.levelModel.findOne({
+            minPoints: { $lte: newTotalPoints },
+            maxPoints: { $gte: newTotalPoints }
+        }).exec();
+
+        const finalLevelId = correctLevel ? correctLevel.levelNumber : 7;
+
+        // --- PREPARAR ACTUALIZACIÓN ATÓMICA ($inc) ---
+        const isPeso = request.measureType?.toLowerCase() === 'peso';
+
+        // Mapeo dinámico de categoría (Plástico -> plastic)
+        const categoryMap: { [key: string]: string } = {
+            'Plástico': 'plastic',
+            'Papel': 'paper',
+            'Cartón': 'paper',
+            'Vidrio': 'glass',
+            'Metal': 'metal'
+        };
+        const categoryKey = categoryMap[request.category] || 'plastic';
+
+        // Definimos qué campos incrementar según la unidad
+        const updateData: any = {
+            $set: {
+                current_points: newTotalPoints,
+                level_id: finalLevelId
+            },
+            $inc: {}
+        };
+
+        if (isPeso) {
+            updateData.$inc['recyclingStats.total_kg'] = request.quantity;
+            updateData.$inc[`recyclingStats.by_category.${categoryKey}.kg`] = request.quantity;
+        } else {
+            updateData.$inc['recyclingStats.total_units'] = request.quantity;
+            updateData.$inc[`recyclingStats.by_category.${categoryKey}.units`] = request.quantity;
+        }
+
+        await this.userModel.findByIdAndUpdate(request.citizen, updateData);
 
         return {
-            message: '¡Recojo exitoso! Puntos otorgados.',
-            evidence: evidenceUrl,
-            points: request.estimatedPoints
+            message: '¡Recojo completado! Impacto y nivel actualizados.',
+            pointsAwarded: request.estimatedPoints,
+            newLevel: finalLevelId
         };
     }
 }

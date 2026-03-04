@@ -187,6 +187,7 @@ export class AuthService {
         googleId: user.googleId,
         phone: user.phone,
         gamification: gamification,
+        recyclingStats: user.recyclingStats,
         dni: user.documentNumber,
         level: user.level_id,
         points: user.current_points,

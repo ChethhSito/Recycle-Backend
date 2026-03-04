@@ -3,5 +3,7 @@ export enum UserRole {
     OFFICIAL = 'OFFICIAL', // Funcionario / Municipalidad
     CITIZEN = 'CITIZEN',
     RECYCLER = 'RECYCLER', // Reciclador
-    BUSINESS = 'BUSINESS'
+    BUSINESS = 'BUSINESS',
+    USER = 'USER',
+    VOLUNTEER = 'VOLUNTEER'
 }
