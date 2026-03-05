@@ -5,7 +5,7 @@ export type EcoParticipantDocument = HydratedDocument<EcoParticipant>;
 
 @Schema({ timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } })
 export class EcoParticipant {
-    @Prop({ type: Types.ObjectId, ref: 'User', required: true, unique: true })
+    @Prop({ type: Types.ObjectId, ref: 'User', required: true, unique: true, index: true })
     user: Types.ObjectId;
 
     @Prop({ default: 0 })

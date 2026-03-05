@@ -27,22 +27,86 @@ export class EcoHistoryService {
             .exec();
     }
 
-    async findApproved(): Promise<EcoHistory[]> {
-        return this.ecoHistoryModel.find({ status: EcoHistoryStatus.APPROVED })
-            .populate('user', 'fullName avatarUrl')
-            .sort({ created_at: -1 })
-            .exec();
+    async findApproved(): Promise<any[]> {
+        return this.ecoHistoryModel.aggregate([
+            { $match: { status: EcoHistoryStatus.APPROVED } },
+            { $sort: { created_at: -1 } },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            },
+            { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'ecoparticipants',
+                    localField: 'user',
+                    foreignField: 'user',
+                    as: 'participantDetails'
+                }
+            },
+            { $unwind: { path: '$participantDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 1,
+                    message: 1,
+                    photoUrl: 1,
+                    likes: 1,
+                    created_at: 1,
+                    isFeatured: 1,
+                    user: {
+                        _id: '$userDetails._id',
+                        fullName: '$userDetails.fullName',
+                        avatarUrl: '$userDetails.avatarUrl',
+                        membershipTier: { $ifNull: ['$participantDetails.membershipTier', 'NONE'] }
+                    }
+                }
+            }
+        ]).exec();
     }
 
-    async findFeatured(): Promise<EcoHistory[]> {
-        return this.ecoHistoryModel.find({
-            status: EcoHistoryStatus.APPROVED,
-            isFeatured: true
-        })
-            .populate('user', 'fullName avatarUrl')
-            .sort({ created_at: -1 })
-            .limit(3)
-            .exec();
+    async findFeatured(): Promise<any[]> {
+        return this.ecoHistoryModel.aggregate([
+            { $match: { status: EcoHistoryStatus.APPROVED, isFeatured: true } },
+            { $sort: { created_at: -1 } },
+            { $limit: 3 },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'user',
+                    foreignField: '_id',
+                    as: 'userDetails'
+                }
+            },
+            { $unwind: { path: '$userDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $lookup: {
+                    from: 'ecoparticipants',
+                    localField: 'user',
+                    foreignField: 'user',
+                    as: 'participantDetails'
+                }
+            },
+            { $unwind: { path: '$participantDetails', preserveNullAndEmptyArrays: true } },
+            {
+                $project: {
+                    _id: 1,
+                    message: 1,
+                    photoUrl: 1,
+                    likes: 1,
+                    created_at: 1,
+                    user: {
+                        _id: '$userDetails._id',
+                        fullName: '$userDetails.fullName',
+                        avatarUrl: '$userDetails.avatarUrl',
+                        membershipTier: { $ifNull: ['$participantDetails.membershipTier', 'NONE'] }
+                    }
+                }
+            }
+        ]).exec();
     }
 
     async updateStatus(id: string, updateDto: UpdateEcoHistoryStatusDto): Promise<EcoHistory> {

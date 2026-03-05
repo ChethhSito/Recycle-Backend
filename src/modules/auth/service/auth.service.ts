@@ -191,6 +191,8 @@ export class AuthService {
         phone: user.phone,
         institution: profile.institution || null,
         gamification: gamification,
+        membershipTier: profile.membershipTier || 'NONE',
+        membershipStatus: profile.membershipStatus || 'NONE',
         dni: user.documentNumber,
         level: profile.level_id || 1,
         points: currentPoints,
