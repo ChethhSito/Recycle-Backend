@@ -74,11 +74,23 @@ export class UsersService {
     }
 
     private async getProfileForUser(userId: string, role: UserRole) {
+        const query = { user: userId }; // MongoDB es inteligente si le pasas el string en findOne a veces, pero vamos a ser explícitos
+
         if (role === UserRole.ADMIN || role === UserRole.MANAGER) {
-            return this.managerModel.findOne({ user: new Types.ObjectId(userId) }).exec();
+            return this.managerModel.findOne({
+                $or: [
+                    { user: userId },
+                    { user: new Types.ObjectId(userId) }
+                ]
+            }).exec();
         }
         if (role === UserRole.CITIZEN || role === UserRole.RECYCLER || role === UserRole.BUSINESS) {
-            return this.participantModel.findOne({ user: new Types.ObjectId(userId) }).exec();
+            return this.participantModel.findOne({
+                $or: [
+                    { user: userId },
+                    { user: new Types.ObjectId(userId) }
+                ]
+            }).exec();
         }
         return null;
     }
