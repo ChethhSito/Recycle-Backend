@@ -53,11 +53,65 @@ export class User {
     @Prop({ default: true })
     isActive: boolean;
 
+    // --- GAMIFICACIÓN (Valores por defecto) ---
+    @Prop({
+        type: {
+            total_kg: { type: Number, default: 0 },
+            total_units: { type: Number, default: 0 },
+            by_category: {
+                plastic: {
+                    kg: { type: Number, default: 0 },
+                    units: { type: Number, default: 0 }
+                },
+                paper: {
+                    kg: { type: Number, default: 0 },
+                    units: { type: Number, default: 0 }
+                },
+                glass: {
+                    kg: { type: Number, default: 0 },
+                    units: { type: Number, default: 0 }
+                },
+                metal: {
+                    kg: { type: Number, default: 0 },
+                    units: { type: Number, default: 0 }
+                },
+                electronics: {
+                    kg: { type: Number, default: 0 },
+                    units: { type: Number, default: 0 }
+                }
+            }
+        },
+        _id: false, // Evita que Mongoose cree un _id para este objeto anidado
+        default: () => ({
+            total_kg: 0,
+            total_units: 0,
+            by_category: {
+                plastic: { kg: 0, units: 0 },
+                paper: { kg: 0, units: 0 },
+                glass: { kg: 0, units: 0 },
+                metal: { kg: 0, units: 0 },
+                electronics: { kg: 0, units: 0 }
+
+            }
+        })
+    })
+    recyclingStats: any;
+
+    @Prop({ default: 0 })
+    current_points: number;
+
+    @Prop({ default: 1 }) // ID del nivel Semilla
+    level_id: number;
+
+
     @Prop({ type: String, default: null })
     resetPasswordToken: string | null;
 
     @Prop({ type: Date, default: null })
     resetPasswordExpires: Date | null;
+
+    @Prop({ type: String, default: null })
+    pushToken: string; //
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

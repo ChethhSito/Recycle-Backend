@@ -154,4 +154,15 @@ export class LevelsService implements OnModuleInit {
     async findAll() {
         return this.levelModel.find().sort({ levelNumber: 1 }).exec();
     }
+
+    async findLevelNumberByPoints(points: number): Promise<number> {
+        // 1. Traemos los niveles ordenados
+        const allLevels = await this.levelModel.find().sort({ levelNumber: 1 }).exec();
+
+        // 2. Buscamos el nivel correspondiente (misma lógica que ya tienes)
+        const currentLevel = allLevels.find(l => points >= l.minPoints && points <= l.maxPoints)
+            || allLevels[allLevels.length - 1];
+
+        return currentLevel.levelNumber;
+    }
 }

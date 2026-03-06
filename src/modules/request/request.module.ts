@@ -6,15 +6,17 @@ import { RequestsService } from "./service/request.service";
 import { CloudinaryModule } from "src/common/cloudinary.module";
 import { User, UserSchema } from "src/modules/users/schema/users.schema";
 import { EcoParticipant, EcoParticipantSchema } from "src/modules/users/schema/eco-participant.schema";
+import { Level, LevelSchema } from "src/modules/level/schema/levels.schema";
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Request.name, schema: RequestSchema }]),
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-        MongooseModule.forFeature([{ name: EcoParticipant.name, schema: EcoParticipantSchema }]),
-        CloudinaryModule
-    ],
-    controllers: [RequestsController],
-    providers: [RequestsService]
+        imports: [
+                MongooseModule.forFeature([{ name: Request.name, schema: RequestSchema }]),
+                MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+                MongooseModule.forFeature([{ name: EcoParticipant.name, schema: EcoParticipantSchema }]),
+                MongooseModule.forFeature([{ name: Level.name, schema: LevelSchema }]),
+                CloudinaryModule
+        ],
+        controllers: [RequestsController],
+        providers: [RequestsService]
 })
 export class RequestModule { }
