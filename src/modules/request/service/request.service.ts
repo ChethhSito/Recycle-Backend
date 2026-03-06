@@ -168,26 +168,13 @@ export class RequestsService {
         (request as any).evidenceUrl = evidenceUrl;
         await request.save();
 
-        // 🏆 ACTUALIZACIÓN DE PUNTOS Y KILOS EN EL PERFIL (NORMALIZADO)
-        await this.participantModel.findOneAndUpdate(
-            { user: request.citizen },
-            {
-                $inc: {
-                    current_points: request.estimatedPoints,
-                    total_recycled_kg: request.quantity
-                },
-                $set: { lastActivity: new Date() }
-            },
-            { new: true, upsert: true }
-        );
+        // --- LÓGICA DE GAMIFICACIÓN EN PERFIL SEPARADO (EcoParticipant) ---
+        const participant = await this.participantModel.findOne({ user: request.citizen });
+        if (!participant) throw new NotFoundException('Perfil de participante no encontrado');
 
-        // --- LÓGICA DE USUARIO Y GAMIFICACIÓN ---
-        const user = await this.userModel.findById(request.citizen);
-        if (!user) throw new NotFoundException('Usuario no encontrado');
+        const newTotalPoints = (participant.current_points || 0) + request.estimatedPoints;
 
-        const newTotalPoints = (user.current_points || 0) + request.estimatedPoints;
-
-        // Buscamos el nivel correspondiente
+        // Buscamos el nivel correspondiente en la tabla de niveles
         const correctLevel = await this.levelModel.findOne({
             minPoints: { $lte: newTotalPoints },
             maxPoints: { $gte: newTotalPoints }
@@ -195,10 +182,7 @@ export class RequestsService {
 
         const finalLevelId = correctLevel ? correctLevel.levelNumber : 7;
 
-        // --- PREPARAR ACTUALIZACIÓN ATÓMICA ($inc) ---
-        const isPeso = request.measureType?.toLowerCase() === 'peso';
-
-        // Mapeo dinámico de categoría (Plástico -> plastic)
+        // Mapeo dinámico de categoría
         const categoryMap: { [key: string]: string } = {
             'Plástico': 'plastic',
             'Papel': 'paper',
@@ -207,16 +191,21 @@ export class RequestsService {
             'Metal': 'metal'
         };
         const categoryKey = categoryMap[request.category] || 'plastic';
+        const isPeso = request.measureType?.toLowerCase() === 'peso';
 
-        // Definimos qué campos incrementar según la unidad
+        // --- ACTUALIZACIÓN ATÓMICA DEL PARTICIPANTE ---
         const updateData: any = {
             $set: {
                 current_points: newTotalPoints,
-                level_id: finalLevelId
+                level_id: finalLevelId,
+                lastActivity: new Date()
             },
-            $inc: {}
+            $inc: {
+                total_recycled_kg: isPeso ? request.quantity : 0
+            }
         };
 
+        // Incrementar stats detallados
         if (isPeso) {
             updateData.$inc['recyclingStats.total_kg'] = request.quantity;
             updateData.$inc[`recyclingStats.by_category.${categoryKey}.kg`] = request.quantity;
@@ -225,14 +214,15 @@ export class RequestsService {
             updateData.$inc[`recyclingStats.by_category.${categoryKey}.units`] = request.quantity;
         }
 
-        await this.userModel.findByIdAndUpdate(request.citizen, updateData);
+        await this.participantModel.updateOne({ user: request.citizen }, updateData);
 
         return {
-            message: '¡Recojo completado! Impacto y nivel actualizados.',
+            message: '¡Recojo completado! Impacto y nivel actualizados en tu perfil.',
             pointsAwarded: request.estimatedPoints,
             newLevel: finalLevelId,
             evidence: evidenceUrl,
             recycled: request.quantity
         };
+
     }
 }

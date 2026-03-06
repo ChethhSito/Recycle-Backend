@@ -168,7 +168,8 @@ export class AuthService {
 
   // 2. Generar el Token JWT (El "Carnet" de acceso)
   async generateJwt(user: any) {
-    const currentPoints = user.current_points || 0;
+    const profile = user.profile || {};
+    const currentPoints = profile.current_points || 0;
     const gamification = await this.levelsService.getLevelStatus(currentPoints);
 
     const payload = {
@@ -188,16 +189,17 @@ export class AuthService {
         authProvider: user.authProvider,
         googleId: user.googleId,
         phone: user.phone,
-        institution: user.profile?.institution || null,
+        institution: profile.institution || null,
         gamification: gamification,
-        membershipTier: user.profile?.membershipTier || 'NONE',
-        membershipStatus: user.profile?.membershipStatus || 'NONE',
-        recyclingStats: user.recyclingStats,
+        membershipTier: profile.membershipTier || 'NONE',
+        membershipStatus: profile.membershipStatus || 'NONE',
+        recyclingStats: profile.recyclingStats || {},
         dni: user.documentNumber,
-        level: user.level_id || 1,
+        level: profile.level_id || 1,
         points: currentPoints,
       }
     };
+
 
   }
 
