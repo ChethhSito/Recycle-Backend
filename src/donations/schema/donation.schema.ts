@@ -11,9 +11,9 @@ export enum DonationStatus {
 
 export enum MembershipTier {
     NONE = 'NONE',
-    STARTER = 'STARTER', // Eco-Socio
-    GROWTH = 'GROWTH',   // Eco-Embajador
-    HERO = 'HERO'        // Eco-Visionario
+    ECO_SOCIO = 'ECO_SOCIO',
+    ECO_EMBAJADOR = 'ECO_EMBAJADOR',
+    ECO_VISIONARIO = 'ECO_VISIONARIO'
 }
 
 @Schema({ timestamps: true })
@@ -25,7 +25,7 @@ export class Donation {
     payerName: string;
 
     @Prop({ enum: MembershipTier, required: true })
-    tier: MembershipTier;
+    membershipTier: MembershipTier;
 
     @Prop({ required: true })
     amount: number;
@@ -34,10 +34,10 @@ export class Donation {
     status: DonationStatus;
 
     @Prop({ type: String })
-    transactionId?: string;
-
-    @Prop({ type: String })
     imageUrl?: string;
+
+    @Prop({ default: false })
+    isRead: boolean;
 }
 
 export const DonationSchema = SchemaFactory.createForClass(Donation);

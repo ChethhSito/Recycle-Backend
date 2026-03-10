@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Req, Param, Patch } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Req, Param, Patch, Delete } from '@nestjs/common';
 import { DonationsService } from './donations.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -10,6 +10,11 @@ export class DonationsController {
     @Post()
     async create(@Req() req, @Body() body: any) {
         return this.donationsService.createDonation(req.user.sub, body);
+    }
+
+    @Post(':id/send-email')
+    async sendEmail(@Param('id') id: string) {
+        return this.donationsService.sendThankYouEmailById(id);
     }
 
     @Get()
@@ -25,5 +30,15 @@ export class DonationsController {
     @Patch(':id/reject')
     async reject(@Param('id') id: string) {
         return this.donationsService.rejectDonation(id);
+    }
+
+    @Delete(':id')
+    async delete(@Param('id') id: string) {
+        return this.donationsService.deleteDonation(id);
+    }
+
+    @Patch('user/:userId/toggle-membership')
+    async toggleMembership(@Param('userId') userId: string) {
+        return this.donationsService.toggleUserMembership(userId);
     }
 }
