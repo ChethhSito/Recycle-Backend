@@ -11,7 +11,6 @@ import { EcoParticipant, EcoParticipantDocument } from 'src/modules/users/schema
 export class RequestsService {
     constructor(
         @InjectModel(Request.name) private requestModel: Model<RequestDocument>,
-        @InjectModel(User.name) private userModel: Model<UserDocument>, // Asumiendo que tu schema de usuario se llama 'User'
         @InjectModel('Level') private levelModel: Model<LevelDocument>,
         @InjectModel(User.name) private userModel: Model<UserDocument>,
         @InjectModel(EcoParticipant.name) private participantModel: Model<EcoParticipantDocument>,
