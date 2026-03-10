@@ -153,8 +153,6 @@ export class RequestsService {
     async completeRequest(requestId: string, collectorId: string, evidenceUrl: string) {
         const request = await this.requestModel.findById(requestId);
         if (!request) throw new NotFoundException('Solicitud no encontrada');
-        if (request.collector?.toString() !== collectorId.toString()) throw new BadRequestException('No tienes permiso.');
-        if (request.status !== 'ACCEPTED') throw new BadRequestException('La solicitud debe estar aceptada.');
 
         if (request.collector?.toString() !== collectorId.toString()) {
             throw new BadRequestException('No tienes permiso para completar esta solicitud.');
@@ -163,6 +161,7 @@ export class RequestsService {
         if (request.status !== 'ACCEPTED') {
             throw new BadRequestException('La solicitud debe estar aceptada para finalizarla.');
         }
+        // --- ACTUALIZACIÓN DE LA SOLICITUD ---
         request.status = 'COMPLETED';
         request.completedAt = new Date();
         (request as any).evidenceUrl = evidenceUrl;

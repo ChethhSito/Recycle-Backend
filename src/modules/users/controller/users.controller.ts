@@ -75,7 +75,6 @@ export class UsersController {
     update(@Param('id') id: string, @Body() updateData: any) {
         return this.usersService.update(id, updateData);
     }
-
     @UseGuards(AuthGuard('jwt')) // Solo usuarios logueados
     @Patch('update-push-token')
     async updatePushToken(@Req() req, @Body('pushToken') pushToken: string) {
